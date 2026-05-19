@@ -1,129 +1,153 @@
 import { Innertube, Platform } from 'youtubei.js';
 
 Platform.shim.eval = async (data, env) => {
-  const properties = [];
-
-  if (env.n) {
-    properties.push(`n: exportedVars.nFunction("${env.n}")`);
-  }
-
-  if (env.sig) {
-    properties.push(`sig: exportedVars.sigFunction("${env.sig}")`);
-  }
-
-  const code = `${data.output}\nreturn { ${properties.join(', ')} }`;
-
+  const code = `var exportedVars;\n${(data.output || '').replace('const exportedVars =', 'exportedVars =')}`;
   return new Function(code)();
 };
+
+const youtubeReady = Innertube.create({
+  cache: {
+    get: async (key) => {
+      const value = gopeed.storage.get(key);
+      if (!value) {
+        return;
+      }
+      return base64ToArrayBuffer(value);
+    },
+    set: async (key, value) => {
+      gopeed.storage.set(key, arrayBufferToBase64(value));
+    },
+    remove: async (key) => {
+      gopeed.storage.remove(key);
+    },
+  },
+  generate_session_locally: true,
+  timezone: '',
+});
+
+async function resolveVideo(videoId, quality) {
+  const youtube = await youtubeReady;
+
+  // Try ANDROID client first — direct URLs, no decipher needed, fast
+  try {
+    const info = await youtube.getBasicInfo(videoId, { client: 'ANDROID' });
+    const formats = info.streaming_data?.formats || [];
+    if (formats.length > 0 && formats[0]?.url) {
+      gopeed.logger.info('[RESOLVE] ANDROID client: direct URLs available');
+      return info;
+    }
+  } catch (err) {
+    gopeed.logger.info('[RESOLVE] ANDROID client failed, falling back to WEB:', err.message);
+  }
+
+  // Fallback: WEB client with player decipher
+  return youtube.getBasicInfo(videoId);
+}
+
+function getStreamUrl(info, format) {
+  // ANDROID formats have direct URLs
+  if (format.url) {
+    return format.url;
+  }
+  // WEB formats need deciphering
+  if (format.decipher) {
+    return format.decipher(info.actions.session.player);
+  }
+  throw new Error('No stream URL available');
+}
 
 // https://www.youtube.com/watch?v=aqz-KE-bpKQ
 // https://youtu.be/aqz-KE-bpKQ
 gopeed.events.onResolve(async (ctx) => {
-  let url = ctx.req.url;
-  let videoId;
-  if (url.includes('youtube.com/')) {
-    videoId = new URL(url).searchParams.get('v');
+  const url = new URL(ctx.req.url);
+  let videoId = url.searchParams.get('v');
+  if (!videoId) {
+    const pathParts = url.pathname.split('/');
+    if (url.hostname === 'youtu.be') {
+      videoId = pathParts[1];
+    } else if (pathParts.includes('shorts') || pathParts.includes('embed') || pathParts.includes('v')) {
+      videoId = pathParts[pathParts.length - 1];
+    }
   }
-  if (url.includes('youtu.be/') || url.includes('youtube.com/shorts/')) {
-    videoId = url.split('/').pop();
+
+  if (!videoId) {
+    return;
   }
 
-  const youtube = await Innertube.create({
-    cache: {
-      get: async (key) => {
-        const value = gopeed.storage.get(key);
-        if (!value) {
-          return;
-        }
-        const buffer = base64ToArrayBuffer(value);
-        return buffer;
-      },
-      set: async (key, value) => {
-        const text = arrayBufferToBase64(value);
-        gopeed.storage.set(key, text);
-      },
-      remove: async (key) => {
-        gopeed.storage.remove(key);
-      },
-    },
-    timezone: '',
-  });
+  try {
+    const quality = gopeed.settings.quality === 'lowest' ? '360p' : 'best';
+    const info = await resolveVideo(videoId, quality);
 
-  const quality = gopeed.settings.quality === 'lowest' ? '360p' : 'best';
-
-  const info = await youtube.getInfo(videoId, { client: 'WEB_EMBEDDED' });
-
-  gopeed.logger.info(`Video info: ${JSON.stringify(info)}`);
-
-  /**
-   * @type {Array<import('@gopeed/types').FileInfo>}
-   */
-  const files = [];
-  if (gopeed.settings.separateStreams === true) {
-    const video = info.chooseFormat({
-      type: 'video',
-      quality,
-    });
-    const audio = info.chooseFormat({
-      type: 'audio',
-      quality,
-    });
-    files.push(
-      {
-        name: `${info.basic_info.title}.${video.quality_label}.video${mimeTypeToExt(video.mime_type, 'mp4')}`,
-        size: video.content_length,
-        req: {
-          url: await getDownloadUrl(info, video),
-        },
-      },
-      {
-        name: `${info.basic_info.title}.${parseInt(audio.bitrate / 1000)}kbps.audio${mimeTypeToExt(
-          audio.mime_type,
-          'webm'
-        )}`,
-        size: audio.content_length,
-        req: {
-          url: await getDownloadUrl(info, audio),
-        },
-      }
-    );
-  } else {
-    const bestFormat = info.chooseFormat({
-      type: 'video+audio',
-      quality,
-    });
-    files.push({
-      name: `${info.basic_info.title}.${bestFormat.quality_label}${mimeTypeToExt(bestFormat.mime_type, 'mp4')}`,
-      size: bestFormat.content_length,
-      req: {
-        url: await getDownloadUrl(info, bestFormat),
-        extra: {
-          header: {
-            Referer: 'https://www.youtube.com/',
+    const files = [];
+    if (gopeed.settings.separateStreams === true) {
+      const video = info.chooseFormat({
+        type: 'video',
+        quality,
+      });
+      const audio = info.chooseFormat({
+        type: 'audio',
+        quality,
+      });
+      files.push(
+        {
+          name: `${info.basic_info.title}.${video.quality_label}.video${mimeTypeToExt(video.mime_type, 'mp4')}`,
+          size: video.content_length,
+          req: {
+            url: getStreamUrl(info, video),
+            extra: {
+              header: {
+                'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip',
+                'Referer': 'https://www.youtube.com/',
+              },
+            },
           },
         },
-      },
-    });
+        {
+          name: `${info.basic_info.title}.${parseInt(audio.bitrate / 1000)}kbps.audio${mimeTypeToExt(
+            audio.mime_type,
+            'webm'
+          )}`,
+          size: audio.content_length,
+          req: {
+            url: getStreamUrl(info, audio),
+            extra: {
+              header: {
+                'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip',
+                'Referer': 'https://www.youtube.com/',
+              },
+            },
+          },
+        }
+      );
+    } else {
+      const bestFormat = info.chooseFormat({
+        type: 'video+audio',
+        quality,
+      });
+      files.push({
+        name: `${info.basic_info.title}.${bestFormat.quality_label}${mimeTypeToExt(bestFormat.mime_type, 'mp4')}`,
+        size: bestFormat.content_length,
+        req: {
+          url: getStreamUrl(info, bestFormat),
+          extra: {
+            header: {
+              'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip',
+              'Referer': 'https://www.youtube.com/',
+            },
+          },
+        },
+      });
+    }
+
+    ctx.res = {
+      name: info.basic_info.title,
+      files,
+    };
+  } catch (err) {
+    gopeed.logger.error('Failed to resolve YouTube video:', err);
+    throw new MessageError(`Failed to resolve video: ${err.message || err}`);
   }
-
-  ctx.res = {
-    name: info.basic_info.title,
-    files,
-  };
 });
-
-/**
- * Get direct download url
- * @typedef {Awaited<ReturnType<Innertube['getBasicInfo']>>} VideoInfo
- * @typedef {ReturnType<VideoInfo['chooseFormat']>} Format
- * @param {VideoInfo} info
- * @param {Format} format
- * @returns {Promise<string>}
- */
-async function getDownloadUrl(info, format) {
-  const formatUrl = await format.decipher(info.actions.session.player);
-  return `${formatUrl}&cpn=${info.cpn}`;
-}
 
 function arrayBufferToBase64(buffer) {
   let binary = '';

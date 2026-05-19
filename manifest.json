@@ -20,7 +20,9 @@
           "*://youtu.be/*",
           "*://youtube.com/shorts/*",
           "*://m.youtube.com/shorts/*",
-          "*://www.youtube.com/shorts/*"
+          "*://www.youtube.com/shorts/*",
+          "*://www.youtube.com/embed/*",
+          "*://www.youtube.com/v/*"
         ]
       },
       "entry": "dist/index.js"
