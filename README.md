@@ -16,14 +16,38 @@ Create task with youtube video url, and click `Download` button, then the video 
 
 ![](image/create.gif)
 
-### Video Quality
+Supported links:
 
-Typically 1080p or better videos do not have audio encoded with it, this extension defaults to downloading audio and video without separation, so the video quality will all be lower than 1080p. If you want to download the highest quality video, you can choose the `audio` and `video` separately on extension settings page, and then use `ffmpeg` to merge them.
+- videos: `https://www.youtube.com/watch?v=aqz-KE-bpKQ`, `https://youtu.be/aqz-KE-bpKQ`, shorts and embeds
+- playlists: `https://www.youtube.com/playlist?list=PL...`
 
-- ffmpeg command
+### Playlists
+
+A playlist link resolves to every video it contains, each one is listed in the task dialog and downloads into a folder named after the playlist. Videos are numbered in playlist order, and unavailable or private entries are skipped.
+
+Resolving a playlist means fetching the streams of each video, so a large playlist takes a while to open the task dialog. Use the `Playlist Limit` setting to only take the first videos of a playlist.
+
+Mixes and radios (`list=RD...`), the watch later list and the liked videos list are not supported, they are not public playlists.
+
+### Quality
+
+The default quality is set on the extension settings page:
+
+| Setting                             | What it does                                                                                             |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `Download Mode`                     | Video with audio in a single file, video and audio as separate files, video only, or audio only          |
+| `Video Quality`                     | `Highest`, `Lowest` or a resolution, a resolution is a maximum and the closest available quality is used |
+| `Audio Quality`                     | `Highest`, `Medium` (around 128kbps) or `Lowest`                                                         |
+| `Choose Quality On Download`        | List every available stream in the task dialog instead of applying the defaults                          |
+| `Download Playlist From Video Link` | Follow the playlist of a `watch?v=...&list=...` link instead of downloading the single video             |
+| `Playlist Limit`                    | Maximum number of videos taken from a playlist, `0` means no limit                                       |
+
+With `Choose Quality On Download` enabled, the task dialog lists one entry per resolution plus the available audio streams, so the quality can be picked for each download. Every entry is selected by default, untick the ones you don't want before clicking `Create`.
+
+Youtube only muxes video and audio together up to 720p. For a higher quality choose `Video and audio (separate files)`, or pick a video stream and an audio stream in the task dialog, and merge them with `ffmpeg`:
 
 ```bash
-ffmpeg -i video.webm -i audio.mp4 -c:v copy -c:a copy output.mp4
+ffmpeg -i video.webm -i audio.m4a -c:v copy -c:a copy output.mp4
 ```
 
 ## Known Limitations
@@ -31,6 +55,7 @@ ffmpeg -i video.webm -i audio.mp4 -c:v copy -c:a copy output.mp4
 - **403 Errors on Download**: Some videos may return HTTP 403 errors even when the resolved URL returns 200 outside Gopeed. This is a limitation of YouTube's content delivery restrictions. Check `core.log` in Gopeed for details.
 - **Client Stability**: The `ANDROID` client is most stable for obtaining downloadable streams. `WEB` and `MWEB` clients may return URLs with decryption issues (`n` parameter).
 - **Separate Streams**: Not all videos support downloading video and audio separately. Use this option cautiously; some videos may fail to resolve properly.
+- **Playlists**: Resolving is done video by video, so youtube may throttle long playlists. Videos that fail are skipped and reported in `core.log`.
 - **Shorts & Embeds**: Support for YouTube Shorts and embedded videos is limited and may not work reliably.
 
 ## Support & Contributing

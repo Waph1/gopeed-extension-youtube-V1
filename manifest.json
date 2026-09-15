@@ -2,9 +2,9 @@
   "name": "youtube",
   "author": "monkeyWie",
   "title": "Youtube",
-  "description": "Youtube video download",
+  "description": "Youtube video and playlist download",
   "icon": "icon.png",
-  "version": "1.3.5",
+  "version": "1.4.0",
   "homepage": "https://github.com/monkeyWie/gopeed-extension-youtube",
   "repository": {
     "url": "https://github.com/monkeyWie/gopeed-extension-youtube"
@@ -17,12 +17,20 @@
           "*://youtube.com/watch/*",
           "*://m.youtube.com/watch/*",
           "*://www.youtube.com/watch/*",
+          "*://music.youtube.com/watch/*",
           "*://youtu.be/*",
           "*://youtube.com/shorts/*",
           "*://m.youtube.com/shorts/*",
           "*://www.youtube.com/shorts/*",
           "*://www.youtube.com/embed/*",
-          "*://www.youtube.com/v/*"
+          "*://www.youtube.com/v/*",
+          "*://youtube.com/live/*",
+          "*://m.youtube.com/live/*",
+          "*://www.youtube.com/live/*",
+          "*://youtube.com/playlist/*",
+          "*://m.youtube.com/playlist/*",
+          "*://www.youtube.com/playlist/*",
+          "*://music.youtube.com/playlist/*"
         ]
       },
       "entry": "dist/index.js"
@@ -30,9 +38,34 @@
   ],
   "settings": [
     {
-      "name": "quality",
-      "title": "Quality",
-      "description": "Video quality",
+      "name": "downloadMode",
+      "title": "Download Mode",
+      "description": "What to download by default. Youtube only muxes video and audio together up to 720p, choose separate streams for a higher quality and merge them with ffmpeg.",
+      "type": "string",
+      "value": "muxed",
+      "options": [
+        {
+          "label": "Video with audio (single file)",
+          "value": "muxed"
+        },
+        {
+          "label": "Video and audio (separate files)",
+          "value": "separate"
+        },
+        {
+          "label": "Video only",
+          "value": "video"
+        },
+        {
+          "label": "Audio only",
+          "value": "audio"
+        }
+      ]
+    },
+    {
+      "name": "videoQuality",
+      "title": "Video Quality",
+      "description": "Default video quality, a resolution is treated as a maximum and the closest available quality is used.",
       "type": "string",
       "value": "highest",
       "options": [
@@ -41,17 +74,84 @@
           "value": "highest"
         },
         {
+          "label": "2160p (4K)",
+          "value": "2160p"
+        },
+        {
+          "label": "1440p (2K)",
+          "value": "1440p"
+        },
+        {
+          "label": "1080p",
+          "value": "1080p"
+        },
+        {
+          "label": "720p",
+          "value": "720p"
+        },
+        {
+          "label": "480p",
+          "value": "480p"
+        },
+        {
+          "label": "360p",
+          "value": "360p"
+        },
+        {
+          "label": "240p",
+          "value": "240p"
+        },
+        {
+          "label": "144p",
+          "value": "144p"
+        },
+        {
           "label": "Lowest",
           "value": "lowest"
         }
       ]
     },
     {
-      "name": "separateStreams",
-      "title": "Separate Streams",
-      "description": "Youtube highest quality video generally has separate video and audio streams, if you want to download highest quality video, you can enable this option to download video and audio separately.",
+      "name": "audioQuality",
+      "title": "Audio Quality",
+      "description": "Default audio quality, used when downloading audio only or separate streams.",
+      "type": "string",
+      "value": "highest",
+      "options": [
+        {
+          "label": "Highest",
+          "value": "highest"
+        },
+        {
+          "label": "Medium (around 128kbps)",
+          "value": "medium"
+        },
+        {
+          "label": "Lowest",
+          "value": "lowest"
+        }
+      ]
+    },
+    {
+      "name": "askQuality",
+      "title": "Choose Quality On Download",
+      "description": "List every available video and audio stream in the task dialog, so the quality can be picked for each download. All entries are selected by default, untick the ones you don't want.",
       "type": "boolean",
       "value": false
+    },
+    {
+      "name": "playlistFromVideoUrl",
+      "title": "Download Playlist From Video Link",
+      "description": "When a video link also contains a playlist (watch?v=...&list=...), download the whole playlist instead of the single video.",
+      "type": "boolean",
+      "value": false
+    },
+    {
+      "name": "playlistLimit",
+      "title": "Playlist Limit",
+      "description": "Maximum number of videos to resolve from a playlist, 0 means no limit. Large playlists take a while to resolve.",
+      "type": "number",
+      "value": 0
     }
   ]
 }
