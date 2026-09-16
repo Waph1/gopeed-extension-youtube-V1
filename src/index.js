@@ -1,4 +1,5 @@
 import { Innertube, Platform } from 'youtubei.js';
+import { installPolyfills } from './polyfill.js';
 import { readSettings } from './settings.js';
 import {
   audioLabel,
@@ -11,6 +12,8 @@ import {
   selectVideo,
   videoLabel,
 } from './formats.js';
+
+installPolyfills();
 
 const PLAYLIST_CONCURRENCY = 5;
 const PLAYLIST_MAX_PAGES = 100;
@@ -135,7 +138,10 @@ async function resolvePlaylist(playlistId, settings) {
 
   const playlist = await fetchPlaylist(playlistId, settings.playlistLimit);
   if (playlist.items.length === 0) {
-    throw new Error('playlist is empty or not accessible');
+    // Youtube explains an empty listing with its own messages, e.g. "2 unavailable videos are hidden".
+    throw new Error(
+      playlist.messages.length > 0 ? playlist.messages.join(' — ') : 'playlist is empty or not accessible'
+    );
   }
   gopeed.logger.info(`[RESOLVE] resolving ${playlist.items.length} videos of playlist ${playlistId}`);
 
@@ -200,6 +206,14 @@ async function fetchPlaylist(playlistId, limit) {
   let page = await youtube.getPlaylist(playlistId);
   const title = textOf(page.info && page.info.title);
 
+  const messages = [];
+  for (const message of page.messages || []) {
+    const text = textOf(message.text);
+    if (text && messages.indexOf(text) < 0) {
+      messages.push(text);
+    }
+  }
+
   const items = [];
   const seen = {};
   for (let pageCount = 0; pageCount < PLAYLIST_MAX_PAGES; pageCount++) {
@@ -215,7 +229,7 @@ async function fetchPlaylist(playlistId, limit) {
       }
       items.push({ id, title: playlistItemTitle(item) });
       if (limit > 0 && items.length >= limit) {
-        return { title, items };
+        return { title, items, messages };
       }
     }
     if (!page.has_continuation) {
@@ -229,7 +243,7 @@ async function fetchPlaylist(playlistId, limit) {
       break;
     }
   }
-  return { title, items };
+  return { title, items, messages };
 }
 
 /**

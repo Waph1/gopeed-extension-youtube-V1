@@ -56,6 +56,7 @@ ffmpeg -i video.webm -i audio.m4a -c:v copy -c:a copy output.mp4
 - **Client Stability**: The `ANDROID` client is most stable for obtaining downloadable streams. `WEB` and `MWEB` clients may return URLs with decryption issues (`n` parameter).
 - **Separate Streams**: Not all videos support downloading video and audio separately. Use this option cautiously; some videos may fail to resolve properly.
 - **Playlists**: Resolving is done video by video, so youtube may throttle long playlists. Videos that fail are skipped and reported in `core.log`.
+- **Album Playlists**: Youtube Music album playlists (`list=OLAK5uy_...`) are often made of art tracks that youtube reports as unavailable. When that happens the error message repeats what youtube answers, for example `2 unavailable videos are hidden`, and there is nothing to download.
 - **Shorts & Embeds**: Support for YouTube Shorts and embedded videos is limited and may not work reliably.
 
 ## Support & Contributing
