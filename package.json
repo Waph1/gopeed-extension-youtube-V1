@@ -1,17 +1,19 @@
 {
-  "name": "gopeed-extension-youtube",
-  "version": "1.0.0",
+  "name": "gopeed-extension-youtube-v1",
+  "version": "2.1.0",
   "private": true,
-  "description": "",
+  "description": "YouTube video, audio and playlist downloads for Gopeed 2",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test test/*.test.js",
     "dev": "webpack --mode development --watch",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "check": "npm test && npm run build",
+    "lint": "eslint src test --quiet"
   },
   "keywords": [],
-  "author": "",
+  "author": "Waph1",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.22.20",
@@ -29,6 +31,9 @@
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "youtubei.js": "^18.0.0"
+    "@ungap/structured-clone": "1.4.0",
+    "bgutils-js": "4.0.3",
+    "googlevideo": "4.0.4",
+    "youtubei.js": "18.0.0"
   }
 }

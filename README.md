@@ -1,69 +1,125 @@
-# Gopeed YouTube Extension
+# YouTube Video & Audio for Gopeed
 
-> **Fork Notice**: This is a fork of [monkeyWie/gopeed-extension-youtube](https://github.com/monkeyWie/gopeed-extension-youtube). Download YouTube videos easily with [Gopeed](https://gopeed.com).
+**[Istruzioni in italiano](docs/README.it.md)**
 
-> Require Gopeed version >= 1.9.0
+Fork maintained at **https://github.com/Waph1/gopeed-extension-youtube-V1**.
+Based on [monkeyWie/gopeed-extension-youtube](https://github.com/monkeyWie/gopeed-extension-youtube), including its September 2026 SABR/WebView implementation.
 
-## Install
+**Requires Gopeed 2.0.0-beta.3 or newer with the WebView runtime.** Video + audio merging additionally requires Gopeed's FFmpeg runtime. Gopeed 1.x does not provide these APIs. A headless CLI/Docker installation without a WebView cannot use this extension. This extension does not require a separate yt-dlp server.
 
-Open the `Gopeed` extension page, enter `https://github.com/Wpnnt/gopeed-extension-youtube-1`, and click install.
+## Install / update
 
-![](image/install.gif)
+1. Install [Gopeed 2.0.0-beta.3 or newer](https://github.com/GopeedLab/gopeed/releases).
+2. Disable/remove the old YouTube extension to avoid two extensions handling the same URL.
+3. In Gopeed → Extensions → Install, paste:
 
-## Usage
+   `https://github.com/Waph1/gopeed-extension-youtube-V1`
 
-Create task with youtube video url, and click `Download` button, then the video will be resolved and ready to download.
+4. Open this extension's settings and choose your defaults.
+5. Create a new task with a YouTube link.
 
-![](image/create.gif)
+The fork's identity is now **Waph1@youtube**, rather than monkeyWie@youtube. Existing installations with the old identity must be reinstalled from the URL above; copy your preferred settings first. Subsequent updates point to this fork, not the original repository. Existing tasks made by the old extension should be recreated.
 
-Supported links:
+## Download modes
 
-- videos: `https://www.youtube.com/watch?v=aqz-KE-bpKQ`, `https://youtu.be/aqz-KE-bpKQ`, shorts and embeds
-- playlists: `https://www.youtube.com/playlist?list=PL...`
+| Setting | Result |
+| --- | --- |
+| Video + audio | One MP4, automatically merged without re-encoding; also works above 720p when available |
+| Audio only | One M4A/AAC or WebM/Opus file, without downloading the video track |
+| Video only | One silent MP4, from the available MP4 video streams |
+| Separate files | One silent MP4 and one audio file; no automatic merge |
 
-### Playlists
+Audio is copied at an existing YouTube quality. There is **no MP3 conversion, upsampling or promise of 320 kbps**. High-resolution MP4 output may contain AV1 or VP9 if H.264 is unavailable at that resolution; player support varies.
 
-A playlist link resolves to every video it contains, each one is listed in the task dialog and downloads into a folder named after the playlist. Videos are numbered in playlist order, and unavailable or private entries are skipped.
+## Quality defaults
 
-Resolving a playlist means fetching the streams of each video, so a large playlist takes a while to open the task dialog. Use the `Playlist Limit` setting to only take the first videos of a playlist.
+- **Video Quality:** Highest, Lowest, or a maximum resolution from 144p to 4320p. The highest available resolution at or below the cap is selected. If every stream is above the cap, the lowest is used. Portrait videos use their shorter side. Codec preference applies within a resolution.
+- **Audio Quality:** Highest, Lowest, or approximately 64/96/128/192/256 kbps. Numeric settings select the closest existing bitrate. “Highest” refers to the selected audio container, not all codecs combined.
+- **Audio File Format:** M4A/AAC or WebM/Opus for audio-only and separate files. Merged MP4 uses AAC audio. Original-language tracks are preferred over dubs/descriptive/DRC tracks when available.
+- **Choose Quality On Download:** Off by default. Enable it to expose choices in Gopeed's confirmation file list.
 
-Mixes and radios (`list=RD...`), the watch later list and the liked videos list are not supported, they are not public playlists.
+### Choose before confirming
 
-### Quality
+Gopeed exposes a selectable **file list**, not custom extension dropdowns. With “Choose Quality On Download” enabled:
 
-The default quality is set on the extension settings page:
+- Each video entry downloads a complete video + audio MP4 at the labelled resolution cap, using your default audio quality.
+- Each audio entry downloads only that audio format. When YouTube exposes descriptors, the label includes bitrate/container and the format ID.
+- **Gopeed initially selects every file. Deselect all, then select only the version(s) you want.** Otherwise all alternatives will download.
+- Playlist choices, and videos whose descriptors are unavailable before verification, offer maximum-quality presets rather than claiming those resolutions exist.
 
-| Setting                             | What it does                                                                                             |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `Download Mode`                     | Video with audio in a single file, video and audio as separate files, video only, or audio only          |
-| `Video Quality`                     | `Highest`, `Lowest` or a resolution, a resolution is a maximum and the closest available quality is used |
-| `Audio Quality`                     | `Highest`, `Medium` (around 128kbps) or `Lowest`                                                         |
-| `Choose Quality On Download`        | List every available stream in the task dialog instead of applying the defaults                          |
-| `Download Playlist From Video Link` | Follow the playlist of a `watch?v=...&list=...` link instead of downloading the single video             |
-| `Playlist Limit`                    | Maximum number of videos taken from a playlist, `0` means no limit                                       |
+To change both audio and video settings for a single download without changing defaults, append a fragment to the URL:
 
-With `Choose Quality On Download` enabled, the task dialog lists one entry per resolution plus the available audio streams, so the quality can be picked for each download. Every entry is selected by default, untick the ones you don't want before clicking `Create`.
-
-Youtube only muxes video and audio together up to 720p. For a higher quality choose `Video and audio (separate files)`, or pick a video stream and an audio stream in the task dialog, and merge them with `ffmpeg`:
-
-```bash
-ffmpeg -i video.webm -i audio.m4a -c:v copy -c:a copy output.mp4
+```text
+https://www.youtube.com/watch?v=aqz-KE-bpKQ#gopeed:mode=muxed&video=1080p&audio=128
+https://youtu.be/aqz-KE-bpKQ#gopeed:mode=audio&audio=highest&container=webm
 ```
 
-## Known Limitations
+Accepted fragment keys:
 
-- **403 Errors on Download**: Some videos may return HTTP 403 errors even when the resolved URL returns 200 outside Gopeed. This is a limitation of YouTube's content delivery restrictions. Check `core.log` in Gopeed for details.
-- **Client Stability**: The `ANDROID` client is most stable for obtaining downloadable streams. `WEB` and `MWEB` clients may return URLs with decryption issues (`n` parameter).
-- **Separate Streams**: Not all videos support downloading video and audio separately. Use this option cautiously; some videos may fail to resolve properly.
-- **Playlists**: Resolving is done video by video, so youtube may throttle long playlists. Videos that fail are skipped and reported in `core.log`.
-- **Shorts & Embeds**: Support for YouTube Shorts and embedded videos is limited and may not work reliably.
+| Key | Values |
+| --- | --- |
+| `mode` | `muxed`, `audio`, `video`, `separate` |
+| `video` | `highest`, `lowest`, `144p`, `240p`, `360p`, `480p`, `720p`, `1080p`, `1440p`, `2160p`, `4320p` |
+| `audio` | `highest`, `lowest`, `64`, `96`, `128`, `192`, `256` |
+| `container` | `m4a`, `webm` |
 
-## Support & Contributing
+A `#gopeed:` fragment disables the alternative-file list for that task. It is not sent to YouTube. It also works on playlist URLs and applies to every selected entry. Unknown/invalid options report an error instead of being ignored.
 
-This is a fork with limited maintenance. Issues and PRs are welcome, but response times may vary. For upstream issues or questions about the original extension, refer to [monkeyWie/gopeed-extension-youtube](https://github.com/monkeyWie/gopeed-extension-youtube).
+## Playlists and YouTube Music albums
 
-## Useful Links
+Supported hosts include youtube.com, www.youtube.com, m.youtube.com, music.youtube.com and youtu.be. Video links include watch, Shorts, live archives, embed and shortened links.
 
+Public playlist links and album IDs beginning with `OLAK5uy` are supported. The same album link can come from either YouTube or YouTube Music. Album listing falls back to the Music client if the regular playlist request fails or is empty.
+
+Example:
+
+```text
+https://youtube.com/playlist?list=OLAK5uy_m7WK0j-v1eLCguUDonKUjJs7Rjza-6lKg
+```
+
+- Entries are numbered in their original order; repeated tracks are preserved.
+- Private/unavailable entries reported by the listing are skipped. A track that fails only at download time appears as a failed task instead of disappearing silently.
+- Pagination loads the whole list. A continuation failure is an error, not a silently truncated playlist.
+- **Playlist Limit** limits the number of playable entries; `0` means no user limit. A safety ceiling of 1000 pages prevents an endless loop.
+- Playback verification/stream preparation happens only when each download starts. Long queues do not reuse expired URLs from the initial playlist scan.
+- A `watch?v=...&list=...` link downloads the single video by default. Enable **Download Playlist From Video Link** to follow its playlist.
+- Radio/Mixes (`RD...`), Watch Later (`WL`) and Liked Videos (`LL`) are not supported. Ongoing live streams and upcoming videos are not supported.
+
+## Troubleshooting
+
+- **Old Gopeed / missing WebView:** upgrade to the version above and use a build with WebView support. Runtime requirements are checked explicitly.
+- **Zero speed at the beginning:** player extraction and YouTube playback verification happen before media arrives. Merging also needs temporary disk space.
+- **Paused or restarted downloads:** SABR output is not byte-range resumable. The extension generates a fresh stream; restarting can redownload from the beginning.
+- **403 / unavailable / sign-in required:** an optional YouTube Cookie setting is available. It does not guarantee access to account-, region- or age-restricted videos. Never put cookies in an issue or log you share.
+- **No audio in video:** “Video only” is intentionally silent. Use “Video + audio”.
+- **All qualities downloading:** turn off “Choose Quality On Download”, or deselect all alternatives and select the wanted ones.
+- **Audio bitrate differs from the label:** defaults/presets describe a target. YouTube may offer different formats or bitrates per track. Available-source format choices pin the audio format ID.
+
+The extension retries a failed task automatically at most once. See Gopeed's `logs/extension.log` and `logs/core.log` for diagnosis. Report the Gopeed version, OS, public URL, mode and error, without cookies or signed stream URLs.
+
+## Development and validation
+
+```bash
+npm ci
+npm test
+npm run lint
+npm run build
+# Optional native-engine smoke check (requires Go 1.25.4+):
+cd test/goja && go run .
+```
+
+`dist/index.js` is committed because Gopeed executes the built artifact directly. Build also generates `.generated/bgutils.js` for the embedded WebView script; this intermediate file is not committed. The package lock and exact playback dependencies make builds reproducible. License notices produced by the bundler are retained.
+
+See [docs/VALIDATION.md](docs/VALIDATION.md) for what was actually tested and the remaining limits. Offline tests are not evidence that YouTube will accept a particular account/network/device. This project cannot guarantee continued compatibility after YouTube changes.
+
+## Technical references / attribution
+
+- [Gopeed extension documentation](https://gopeed.com/docs/dev-extension)
+- [Gopeed 2.0.0-beta.3 runtime](https://github.com/GopeedLab/gopeed/tree/v2.0.0-beta.3/pkg/download/engine/inject)
+- [Gopeed resource/file model](https://github.com/GopeedLab/gopeed/blob/v2.0.0-beta.3/pkg/base/model.go)
+- [Original extension, imported base eeb78d1](https://github.com/monkeyWie/gopeed-extension-youtube/tree/eeb78d168e053e9a2aad1dbaa309fc11f6992f7c)
 - [YouTube.js](https://github.com/LuanRT/YouTube.js)
-- [How to develop a gopeed extension](https://docs.gopeed.com/dev-extension.html)
-- [Original Repository](https://github.com/monkeyWie/gopeed-extension-youtube)
+- [googlevideo](https://github.com/LuanRT/googlevideo)
+- [BgUtils](https://github.com/LuanRT/BgUtils)
+
+The SABR framing, bounded buffering, browser profile, verification, cookie handling and associated baseline tests derive from the original extension. This fork adds download modes, audio selection, quality caps, per-download overrides, Music-album fallback, playlist limits and further regression tests.

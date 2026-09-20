@@ -1,37 +1,40 @@
 {
   "name": "youtube",
-  "author": "monkeyWie",
-  "title": "Youtube",
-  "description": "Youtube video and playlist download",
+  "author": "Waph1",
+  "title": "YouTube Video & Audio",
+  "description": "YouTube videos, audio and playlists with automatic merging. Requires Gopeed 2.0.0-beta.3 or later.",
   "icon": "icon.png",
-  "version": "1.4.0",
-  "homepage": "https://github.com/monkeyWie/gopeed-extension-youtube",
+  "version": "2.1.0",
+  "homepage": "https://github.com/Waph1/gopeed-extension-youtube-V1",
   "repository": {
-    "url": "https://github.com/monkeyWie/gopeed-extension-youtube"
+    "url": "https://github.com/Waph1/gopeed-extension-youtube-V1"
   },
   "scripts": [
     {
       "event": "onResolve",
       "match": {
         "urls": [
-          "*://youtube.com/watch/*",
-          "*://m.youtube.com/watch/*",
-          "*://www.youtube.com/watch/*",
-          "*://music.youtube.com/watch/*",
+          "*://youtube.com/*",
+          "*://www.youtube.com/*",
+          "*://m.youtube.com/*",
+          "*://music.youtube.com/*",
           "*://youtu.be/*",
-          "*://youtube.com/shorts/*",
-          "*://m.youtube.com/shorts/*",
-          "*://www.youtube.com/shorts/*",
-          "*://www.youtube.com/embed/*",
-          "*://www.youtube.com/v/*",
-          "*://youtube.com/live/*",
-          "*://m.youtube.com/live/*",
-          "*://www.youtube.com/live/*",
-          "*://youtube.com/playlist/*",
-          "*://m.youtube.com/playlist/*",
-          "*://www.youtube.com/playlist/*",
-          "*://music.youtube.com/playlist/*"
+          "*://www.youtube-nocookie.com/embed/*"
         ]
+      },
+      "entry": "dist/index.js"
+    },
+    {
+      "event": "onStart",
+      "match": {
+        "labels": ["Waph1@youtube"]
+      },
+      "entry": "dist/index.js"
+    },
+    {
+      "event": "onError",
+      "match": {
+        "labels": ["Waph1@youtube"]
       },
       "entry": "dist/index.js"
     }
@@ -40,12 +43,12 @@
     {
       "name": "downloadMode",
       "title": "Download Mode",
-      "description": "What to download by default. Youtube only muxes video and audio together up to 720p, choose separate streams for a higher quality and merge them with ffmpeg.",
+      "description": "Video + audio is merged automatically into MP4. Separate files and audio-only downloads do not need FFmpeg.",
       "type": "string",
       "value": "muxed",
       "options": [
         {
-          "label": "Video with audio (single file)",
+          "label": "Video + audio (automatic MP4 merge)",
           "value": "muxed"
         },
         {
@@ -65,13 +68,17 @@
     {
       "name": "videoQuality",
       "title": "Video Quality",
-      "description": "Default video quality, a resolution is treated as a maximum and the closest available quality is used.",
+      "description": "Maximum resolution on the shorter side (also for Shorts). Choose the highest available at or below the cap; if none exists, use the lowest available.",
       "type": "string",
       "value": "highest",
       "options": [
         {
           "label": "Highest",
           "value": "highest"
+        },
+        {
+          "label": "4320p (8K)",
+          "value": "4320p"
         },
         {
           "label": "2160p (4K)",
@@ -114,7 +121,7 @@
     {
       "name": "audioQuality",
       "title": "Audio Quality",
-      "description": "Default audio quality, used when downloading audio only or separate streams.",
+      "description": "Select an existing audio stream; no upsampling or MP3 conversion. Numeric values choose the nearest available bitrate. MP4 video uses AAC audio.",
       "type": "string",
       "value": "highest",
       "options": [
@@ -123,8 +130,24 @@
           "value": "highest"
         },
         {
-          "label": "Medium (around 128kbps)",
-          "value": "medium"
+          "label": "About 256 kbps",
+          "value": "256"
+        },
+        {
+          "label": "About 192 kbps",
+          "value": "192"
+        },
+        {
+          "label": "About 128 kbps",
+          "value": "128"
+        },
+        {
+          "label": "About 96 kbps",
+          "value": "96"
+        },
+        {
+          "label": "About 64 kbps",
+          "value": "64"
         },
         {
           "label": "Lowest",
@@ -135,7 +158,7 @@
     {
       "name": "askQuality",
       "title": "Choose Quality On Download",
-      "description": "List every available video and audio stream in the task dialog, so the quality can be picked for each download. All entries are selected by default, untick the ones you don't want.",
+      "description": "Offer video+audio and audio-only choices in the confirmation file list. Gopeed selects ALL by default: deselect all, then select the version you want. Video entries use your default audio quality. Playlist entries are quality caps, not promises of availability.",
       "type": "boolean",
       "value": false
     },
@@ -149,9 +172,33 @@
     {
       "name": "playlistLimit",
       "title": "Playlist Limit",
-      "description": "Maximum number of videos to resolve from a playlist, 0 means no limit. Large playlists take a while to resolve.",
+      "description": "Maximum playable entries to list; 0 loads the whole playlist. Streams are prepared only when each download starts.",
       "type": "number",
       "value": 0
+    },
+    {
+      "name": "audioContainer",
+      "title": "Audio File Format",
+      "description": "For audio-only and separate files. M4A = AAC; WebM = usually Opus. Highest means highest within this format. No transcoding.",
+      "type": "string",
+      "value": "m4a",
+      "options": [
+        {
+          "label": "M4A (AAC)",
+          "value": "m4a"
+        },
+        {
+          "label": "WebM (Opus)",
+          "value": "webm"
+        }
+      ]
+    },
+    {
+      "name": "cookie",
+      "title": "YouTube Cookie (Optional)",
+      "description": "Optional Cookie request header for your YouTube account. Leave empty for public videos. Never share this value in logs or issues.",
+      "type": "string",
+      "value": ""
     }
   ]
 }

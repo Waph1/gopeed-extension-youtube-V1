@@ -1,0 +1,28 @@
+name: Extension checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Ensure the installable bundle is current
+        run: git diff --exit-code -- dist
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.4'
+          cache-dependency-path: test/goja/go.sum
+      - name: Load production bundle in Gopeed's JavaScript engine
+        working-directory: test/goja
+        run: go run .
