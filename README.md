@@ -40,8 +40,10 @@ This is an explicit choice: a Music category/link cannot reliably distinguish a 
 
 - Title and the source video URL (comment tag) are always written for a completed music download.
 - Artist, album and release year come from the matching YouTube Music entry; album artist and track number come from the matching album when exposed. Missing fields stay empty. The uploader is not assumed to be the artist, the video upload year is not used as the release year, and playlist position is not used as an album track number.
+- When an official video has no album link, a bounded song search discovers candidate albums. Album tags are accepted only when the album lists the original video ID; search ranking, matching titles and playlist names alone are insufficient.
+- Album details (up to 16 albums) and successful covers (up to 4 images, 8 MiB total) are cached in memory for ten minutes during playlist downloads.
 - Available JPEG/PNG album artwork is embedded; otherwise the matching track/video thumbnail is used. Unavailable, unsupported or oversized artwork is omitted with a log warning. Artwork is limited to 2 MiB.
-- Catalogue lookup has a 20-second deadline; artwork has an 8-second deadline. Failures preserve the title/source and other verified fields, with warnings in `extension.log`. Cancelling still cancels the download.
+- Catalogue lookup has a 20-second deadline; artwork has a 20-second deadline with a 10-second limit per image so a smaller album cover can be tried if the larger one stalls. Failures preserve the title/source and other verified fields, with warnings in `extension.log`. Cancelling still cancels the download.
 - Tags are embedded in the M4A, not saved as a sidecar. Audio bytes are copied without conversion, downloading video, external tools or FFmpeg. MP4 headers/indexes are adjusted in bounded memory; an unsupported/malformed stream fails rather than being reported as a successfully tagged file.
 
 For a single task (also works on a playlist):
