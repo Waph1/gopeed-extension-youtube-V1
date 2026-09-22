@@ -6,6 +6,8 @@ import { getBrowserProfile } from './lib/browser.js';
 import { resolveVideo } from './lib/video.js';
 import { extractPlaylistId, resolvePlaylist } from './lib/playlist.js';
 import { prepareSabrStreams } from './lib/sabr/index.js';
+import { resolveMusicMetadata } from './lib/music.js';
+import { tagM4aStream } from './lib/m4a-tags.js';
 
 function messageError(error) {
   return error instanceof MessageError ? error : new MessageError(`YouTube: ${error?.message || String(error)}`);
@@ -190,12 +192,17 @@ async function createTrackURL(labels) {
               if (!reader) {
                 const session = await prepareSession(labels, lifetime.signal);
                 checkCancelled(lifetime.signal);
+                const metadata =
+                  audio && labels.musicMetadata === '1'
+                    ? await resolveMusicMetadata(labels.input, session.info, lifetime.signal)
+                    : null;
+                checkCancelled(lifetime.signal);
                 producer = await (audio ? session.openAudioStream() : session.openVideoStream());
                 if (stopped) {
                   producer.abort();
                   return;
                 }
-                reader = producer.stream.getReader();
+                reader = (metadata ? tagM4aStream(producer.stream, metadata) : producer.stream).getReader();
               }
               const chunk = await reader.read();
               if (stopped) return;
@@ -218,12 +225,21 @@ async function createTrackURL(labels) {
 }
 
 function makeFile(input, title, choice, path = '') {
-  const { mode, videoQuality = 'highest', audioQuality = 'highest', audioContainer = 'm4a', audioItag = '' } = choice;
+  const {
+    mode,
+    videoQuality = 'highest',
+    audioQuality = 'highest',
+    audioContainer = 'm4a',
+    audioItag = '',
+    musicMetadata = false,
+  } = choice;
   const audioLabel = /^\d+$/.test(audioQuality) ? `${audioQuality}kbps` : audioQuality;
   const qualityLabel = /^\d+p$/.test(videoQuality) ? `max-${videoQuality}` : videoQuality;
   const suffix =
     mode === 'audio'
-      ? `audio-${audioLabel}${audioItag ? `-itag${audioItag}` : ''}.${audioContainer}`
+      ? `${musicMetadata ? 'music-tags' : 'audio'}-${audioLabel}${
+          audioItag ? `-itag${audioItag}` : ''
+        }.${audioContainer}`
       : mode === 'video'
       ? `video-only-${qualityLabel}.mp4`
       : `video+audio-${qualityLabel}-${audioLabel}.mp4`;
@@ -235,6 +251,7 @@ function makeFile(input, title, choice, path = '') {
     audioQuality,
     audioContainer: mode === 'muxed' ? 'm4a' : audioContainer,
     audioItag,
+    musicMetadata: musicMetadata ? '1' : '0',
     type: 'youtube-sabr',
   };
   return { name: `${sanitizeFileName(title)}.${suffix}`, path, req: { url: input, rawUrl: input, labels } };

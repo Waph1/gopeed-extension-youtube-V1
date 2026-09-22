@@ -26,10 +26,31 @@ The fork's identity is now **Waph1@youtube**, rather than monkeyWie@youtube. Exi
 | --- | --- |
 | Video + audio | One MP4, automatically merged without re-encoding; also works above 720p when available |
 | Audio only | One M4A/AAC or WebM/Opus file, without downloading the video track |
+| Music with metadata | One M4A/AAC with embedded title/source, plus available artist, album, year, album track number and artwork |
 | Video only | One silent MP4, from the available MP4 video streams |
 | Separate files | One silent MP4 and one audio file; no automatic merge |
 
 Audio is copied at an existing YouTube quality. There is **no MP3 conversion, upsampling or promise of 320 kbps**. High-resolution MP4 output may contain AV1 or VP9 if H.264 is unavailable at that resolution; player support varies.
+
+### Music tags (2.2.0)
+
+Select **Download Mode → Music with metadata (M4A/AAC)** to tag every audio download in that mode, including playlist entries. Alternatively, enable **Choose Quality On Download** and select an M4A file labelled `music-tags` instead of its plain `audio` variant. Quality selection still applies; this mode always uses AAC/M4A even if the ordinary audio-format preference is WebM. There is no tagged WebM or MP3 output in this version.
+
+This is an explicit choice: a Music category/link cannot reliably distinguish a single recording from a concert, compilation or video with background music. Ordinary Audio only remains an unchanged source stream.
+
+- Title and the source video URL (comment tag) are always written for a completed music download.
+- Artist, album and release year come from the matching YouTube Music entry; album artist and track number come from the matching album when exposed. Missing fields stay empty. The uploader is not assumed to be the artist, the video upload year is not used as the release year, and playlist position is not used as an album track number.
+- Available JPEG/PNG album artwork is embedded; otherwise the matching track/video thumbnail is used. Unavailable, unsupported or oversized artwork is omitted with a log warning. Artwork is limited to 2 MiB.
+- Catalogue lookup has a 20-second deadline; artwork has an 8-second deadline. Failures preserve the title/source and other verified fields, with warnings in `extension.log`. Cancelling still cancels the download.
+- Tags are embedded in the M4A, not saved as a sidecar. Audio bytes are copied without conversion, downloading video, external tools or FFmpeg. MP4 headers/indexes are adjusted in bounded memory; an unsupported/malformed stream fails rather than being reported as a successfully tagged file.
+
+For a single task (also works on a playlist):
+
+```text
+https://youtu.be/ML1A1-VSWWo#gopeed:mode=music&audio=highest
+```
+
+Update the extension and create a **new task**; previously downloaded files/existing task options are not retroactively changed. Android playback and tag display still require the device checks in the manual test plan.
 
 ## Quality defaults
 
@@ -44,6 +65,7 @@ Gopeed exposes a selectable **file list**, not custom extension dropdowns. With 
 
 - Each video entry downloads a complete video + audio MP4 at the labelled resolution cap, using your default audio quality.
 - Each audio entry downloads only that audio format. When YouTube exposes descriptors, the label includes bitrate/container and the format ID.
+- Each M4A audio choice also has a `music-tags` alternative with embedded music metadata.
 - **Gopeed initially selects every file. Deselect all, then select only the version(s) you want.** Otherwise all alternatives will download.
 - Playlist choices, and videos whose descriptors are unavailable before verification, offer maximum-quality presets rather than claiming those resolutions exist.
 
@@ -58,7 +80,7 @@ Accepted fragment keys:
 
 | Key | Values |
 | --- | --- |
-| `mode` | `muxed`, `audio`, `video`, `separate` |
+| `mode` | `muxed`, `audio`, `music` (tagged M4A), `video`, `separate` |
 | `video` | `highest`, `lowest`, `144p`, `240p`, `360p`, `480p`, `720p`, `1080p`, `1440p`, `2160p`, `4320p` |
 | `audio` | `highest`, `lowest`, `64`, `96`, `128`, `192`, `256` |
 | `container` | `m4a`, `webm` |
@@ -102,6 +124,7 @@ The extension retries a failed task automatically at most once. See Gopeed's `lo
 ```bash
 npm ci
 npm test
+npm run test:media # Optional locally; requires ffmpeg/ffprobe, mandatory in CI
 npm run lint
 npm run build
 # Optional native-engine smoke check (requires Go 1.25.4+):

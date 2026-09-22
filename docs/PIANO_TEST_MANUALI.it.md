@@ -1,6 +1,6 @@
 # Piano di test manuali — estensione YouTube per Gopeed
 
-Versione di riferimento: `manifest.json` 2.1.0. Stato iniziale: **nessun trasferimento multimediale completo verificato nell'app Gopeed**. I 45 test automatici, build, lint, prova del motore Goja e lettura online della playlist campione sono documentati in [VALIDATION.md](VALIDATION.md), ma non sostituiscono queste prove. Segnare le caselle solo dopo aver osservato il risultato. Questo documento è anche il registro per i test prima di una pubblicazione ufficiale; lo sviluppo resta in pausa finché non arrivano esiti concreti.
+Versione di riferimento: `manifest.json` 2.2.0. Stato iniziale: **nessun trasferimento multimediale completo verificato nell'app Gopeed**. I test automatici, le prove su file audio sintetici, build, lint, prova del motore Goja e precedente lettura online della playlist campione sono documentati in [VALIDATION.md](VALIDATION.md), ma non sostituiscono queste prove. Segnare le caselle solo dopo aver osservato il risultato. Il 21 settembre 2026 è stata aggiunta, su richiesta, la modalità Musica con metadati: le prove di questa sezione sono nuove e ancora da eseguire sul dispositivo. Questo documento resta il registro prima di una pubblicazione ufficiale.
 
 ## Come registrare una prova
 
@@ -131,7 +131,30 @@ Impostare `playlistLimit = 0` per la playlist completa; **ogni voce può fallire
 
 ## Criteri per valutare la pubblicazione
 
+### Musica con metadati — nuove prove per la 2.2.0
+
+Prima aggiornare l’estensione e creare **task nuovi**. Impostare `Download Mode = Music with metadata (M4A/AAC)` e `Choose Quality On Download = off`. Usare un brano singolo presente nel catalogo YouTube Music e un lettore Android che mostri i tag incorporati. Non confondere nome del file, copertine cercate online dal lettore e tag effettivamente presenti: verificare anche offline o con un editor di tag già disponibile.
+
+| ID | Pr. | Prova | Esito atteso |
+| --- | --- | --- | --- |
+| M01 | P0 | Scaricare un brano in modalità Musica, aprire il file e ispezionare i tag. | Un M4A con titolo e URL di origine nel commento; audio fino alla fine. Artista e album devono corrispondere al brano se restituiti dal catalogo. |
+| M02 | P1 | Brano con album identificabile e immagine JPEG/PNG disponibile. | Copertina dentro il file; nessun file immagine separato necessario. Anno, artista album e numero traccia presenti solo se esposti dalla voce album. |
+| M03 | P0 | Attivare Choose Quality On Download, deselezionare tutto e scegliere solo una voce `music-tags`. | Un solo M4A con tag alla qualità AAC scelta; nessun video o duplicato normale scaricato. |
+| M04 | P1 | Impostare Audio File Format = WebM, poi Download Mode = Music with metadata. | M4A/AAC dichiarato nel nome: la modalità Musica usa sempre M4A. Nessun WebM rinominato o MP3. |
+| M05 | P1 | Confrontare Highest, Lowest e 128 per lo stesso brano musicale. | Tag presenti in ogni variante; bitrate coerente con gli stream AAC disponibili; nessuna qualità creata artificialmente. |
+| M06 | P0 | Playlist con brani di artisti/album diversi; selezionare due tracce. | Metadati indipendenti e corretti, nessun artista/copertina copiato da un’altra traccia. La posizione nella playlist non diventa il numero traccia dell’album. |
+| M07 | P1 | Brano con accenti, emoji e caratteri non latini. | Titolo/artista leggibili nei tag e nel lettore; nomi file sempre validi. |
+| M08 | P1 | Video non presente nel catalogo musicale, concerto o compilation. | Titolo del video e origine conservati; nessun brano della coda o di sottofondo attribuito all’intero video. Campi non verificabili vuoti; eventuali avvisi nel log. |
+| M09 | P1 | Se riproducibile, rendere indisponibile il catalogo/copertina senza bloccare lo streaming. | Ricerca limitata nel tempo; download con titolo/origine e dati verificati residui, campi mancanti vuoti e avviso. Non inventare anni o artisti. |
+| M10 | P1 | Annullare durante la ricerca metadati e durante il download; ripetere con pausa/ripresa e riavvio dell’app. | Annullamento efficace; nessun falso completamento. Ripartenza con stream nuovo e tag ancora presenti sul file finale. |
+| M11 | P0 | Ascoltare inizio/fine e saltare a metà brano nel lettore Android. | Audio integro, durata plausibile e ricerca della posizione funzionante. L’eventuale traccia immagine è copertina statica, non un video scaricato. |
+| M12 | P1 | Ripetere lo stesso URL in Audio only, M4A e WebM. | Modalità normali ancora funzionanti; nessuna aggiunta dei nuovi tag se non si seleziona Musica. |
+| M13 | P1 | Usare `#gopeed:mode=music&audio=128`, poi aggiungere `&container=webm`. | Primo link: M4A con tag; secondo: errore esplicito, perché la combinazione non è supportata. |
+
+### Verifiche per la pubblicazione
+
 - [ ] Tutti i **P0** applicabili superati **su Gopeed reale**, inclusi file finali singoli video+audio, audio M4A/WebM, una scelta dalla lista e i **due** brani dell'album; nessun P0 irrisolto.
+- [ ] Per la 2.2.0, anche **M01, M03, M06 e M11** superati su Android; verificata la distinzione tra dati incorporati e dati cercati online dal lettore.
 - [ ] Funzioni pubblicizzate e P1 principali verificate sulla piattaforma di pubblicazione (Android compreso, se dichiarato); eventuali P1 aperti descritti chiaramente come limiti, senza affermare che sono supportati.
 - [ ] Almeno un video singolo, una playlist ordinaria e l'album musicale testati **fino alla riproduzione dei file**; playlist oltre una pagina e fallback di qualità provati.
 - [ ] Verificati compatibilità con versione Gopeed dichiarata, installazione da fork, file/codec reali, spazio insufficiente ed errori di rete. Ripetere smoke test dopo l'ultima modifica.

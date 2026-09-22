@@ -1,4 +1,17 @@
-# Validation — 2026-09-20
+# Validation — 2026-09-21
+
+## Version 2.2.0 — music metadata
+
+- `npm test`: **60 tests passed**, covering the existing downloads plus explicit music choices, M4A selection, lazy metadata resolution, cancellation/restart/error propagation, exact video-ID matching, missing-data fallback, artwork limits and HTTP response cleanup, malformed MP4 handling and offset relocation.
+- `npm run test:media`: **4 tests passed** using actual FFmpeg/ffprobe and locally generated AAC audio. Layouts: regular faststart MP4, fragmented MP4 with absolute fragment offsets, fragmented MP4 with moof-relative offsets, and DASH MP4 with segment indexes.
+- In each native media test, ffprobe reads Unicode title/artist, album, album artist, year, track number, source comment and embedded PNG artwork. Decoded audio SHA-256 hashes match the untagged original, both from the beginning and after seeking to one second. No live YouTube audio was used for these tests.
+- The production bundle compiles and registers all handlers with the Goja revision pinned by Gopeed beta.3. Build/lint complete successfully; webpack still reports advisory bundle-size warnings.
+- The 2.2.0 catalogue adapters were checked against the installed **YouTube.js 18.0.0** parsers (`PlaylistPanelVideo`, `MusicResponsiveListItem`, `MusicDetailHeader`, `MusicResponsiveHeader`, `TrackInfo` and `Album`) and exercised with fixtures. A public live metadata lookup for `ML1A1-VSWWo` was attempted here but **timed out**. Actual catalogue retrieval and artwork download in Gopeed remain unverified.
+- No Android app, Android media scanner/player, live SABR-to-tagged-file transfer, or end-to-end device cancellation/restart is claimed tested. Run **M01–M13** in [PIANO_TEST_MANUALI.it.md](PIANO_TEST_MANUALI.it.md).
+
+Music mode embeds iTunes-style MP4 tags while copying AAC unchanged. It buffers only bounded control boxes (4 MiB maximum per source control box) and artwork (2 MiB maximum), relocates sample/fragment absolute offsets, and rejects unsupported layouts rather than silently returning untagged/corrupt output. It uses the existing Gopeed stream/Blob runtime, **not** a Node API, external binary or FFmpeg runtime. Native FFmpeg is used for development validation only. WebM tagging and automatic music classification are deliberately not advertised.
+
+## Previous 2.1.0 validation — 2026-09-20
 
 ## Confirmed
 
@@ -34,6 +47,7 @@ The playback transport is based on the original extension's September 19, 2026 i
 npm ci
 npm run lint
 npm test
+npm run test:media # requires local ffmpeg and ffprobe
 npm run build
 cd test/goja
 go run .

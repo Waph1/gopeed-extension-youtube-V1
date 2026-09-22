@@ -19,10 +19,10 @@ Il fork ora usa l’identità `Waph1@youtube`. La reinstallazione serve perché 
 
 | Impostazione | Significato |
 | --- | --- |
-| Download Mode | Video con audio in un MP4, solo audio, solo video o due file separati |
+| Download Mode | Video con audio in un MP4, solo audio, musica con metadati, solo video o due file separati |
 | Video Quality | Migliore, peggiore oppure risoluzione massima desiderata |
 | Audio Quality | Migliore, peggiore oppure bitrate disponibile più vicino al valore indicato |
-| Audio File Format | M4A/AAC oppure WebM/Opus; vale per audio e tracce separate |
+| Audio File Format | M4A/AAC oppure WebM/Opus; vale per audio e tracce separate. Musica con metadati usa sempre M4A/AAC |
 | Choose Quality On Download | Mostra le alternative nell’elenco prima della conferma |
 | Download Playlist From Video Link | Se un link video include anche una playlist, scarica l’intera playlist |
 | Playlist Limit | Numero massimo di elementi riproducibili; 0 carica tutto l’elenco |
@@ -33,11 +33,36 @@ La qualità video è un tetto: chiedendo 1080p, in assenza di 1080p si preferisc
 
 La qualità audio è quella offerta da YouTube: non si converte in MP3 e non si crea artificialmente una qualità superiore. “Migliore” vale all’interno del formato audio scelto.
 
+## Musica con metadati — versione 2.2.0
+
+Per incorporare i metadati in ogni brano scaricato, scegli **Download Mode → Music with metadata (M4A/AAC)**. Per decidere volta per volta, attiva **Choose Quality On Download** e scegli una variante audio con `music-tags` nel nome. La scelta è esplicita: categoria Musica o link YouTube Music non bastano a distinguere in modo affidabile un singolo brano da un concerto, una compilation o un video con musica di sottofondo.
+
+| Dato incorporato nel file | Comportamento |
+| --- | --- |
+| Titolo | Titolo del brano quando disponibile, altrimenti titolo del video |
+| Artista e album | Dati della voce YouTube Music corrispondente allo stesso video; vuoti se non disponibili |
+| Anno | Anno di pubblicazione dell’album se disponibile; non l’anno di caricamento del video |
+| Artista dell’album e numero traccia | Solo dai dati dell’album che contiene quel video; il numero nella playlist non viene usato come numero traccia |
+| Copertina | Immagine JPEG/PNG dell’album se disponibile, altrimenti miniatura del brano/video; massimo 2 MiB |
+| Origine | URL del video nel campo commento |
+
+I metadati sono **dentro il file M4A**. La qualità AAC resta quella selezionata e disponibile su YouTube: nessuna ricodifica, nessun download del video e nessun programma aggiuntivo o FFmpeg per scrivere i tag. Questa modalità usa **sempre M4A**, anche se per l’audio normale hai impostato WebM. In questa versione non sono previsti WebM con tag o MP3.
+
+Se YouTube Music non risponde o alcuni dati mancano, vengono scritti titolo, origine e i campi verificati disponibili; gli altri restano vuoti. Non viene inventato l’artista a partire dal nome del canale. Copertine non disponibili vengono omesse. I limiti sono segnalati in `extension.log`; la ricerca dei dati dura al massimo 20 secondi e quella della copertina altri 8. Se il file non può essere modificato correttamente, il task segnala errore.
+
+Esempio per un singolo download:
+
+```text
+https://youtu.be/ML1A1-VSWWo#gopeed:mode=music&audio=highest
+```
+
+Funziona anche con link playlist: ogni traccia riceve i propri metadati. Dopo aver aggiornato l’estensione, crea nuovi download: file già scaricati e vecchi task non vengono modificati. La modalità **Audio only** continua a scaricare lo stream senza aggiungere tag.
+
 ## Scelta prima della conferma
 
 Gopeed permette alle estensioni di restituire un elenco di file selezionabili. Non espone menu personalizzati per qualità e modalità.
 
-Attivando **Choose Quality On Download**, vedrai versioni video con audio e versioni solo audio. **Gopeed le seleziona tutte inizialmente: deseleziona tutto e spunta soltanto la versione desiderata.** Ogni variante selezionata è un download distinto.
+Attivando **Choose Quality On Download**, vedrai versioni video con audio, versioni solo audio e alternative M4A con `music-tags` nel nome. **Gopeed le seleziona tutte inizialmente: deseleziona tutto e spunta soltanto la versione desiderata.** Ogni variante selezionata è un download distinto.
 
 Le versioni video usano la qualità audio predefinita. Per scegliere contemporaneamente entrambe le qualità nel singolo download, senza cambiare le impostazioni, puoi aggiungere al link:
 

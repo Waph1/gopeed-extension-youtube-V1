@@ -1,4 +1,4 @@
-export const DOWNLOAD_MODES = ['muxed', 'separate', 'video', 'audio'];
+export const DOWNLOAD_MODES = ['muxed', 'separate', 'video', 'audio', 'music'];
 export const VIDEO_QUALITIES = [
   'highest',
   '4320p',
@@ -50,6 +50,8 @@ export function readSettings(rawUrl = '', values = gopeed.settings || {}) {
       settings[fields[key][0]] = value;
     }
     settings.askQuality = false;
+    if (settings.downloadMode === 'music' && params.get('container') === 'webm')
+      throw new Error('Music with metadata uses M4A/AAC. Remove container=webm or use mode=audio.');
   }
   return settings;
 }

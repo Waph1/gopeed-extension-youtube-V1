@@ -1,6 +1,6 @@
 {
   "name": "gopeed-extension-youtube-v1",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "description": "YouTube video, audio and playlist downloads for Gopeed 2",
   "main": "index.js",
@@ -10,7 +10,8 @@
     "dev": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "check": "npm test && npm run build",
-    "lint": "eslint src test --quiet"
+    "lint": "eslint src test --quiet",
+    "test:media": "node --test test/media-tags.mjs"
   },
   "keywords": [],
   "author": "Waph1",
