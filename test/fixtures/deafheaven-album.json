@@ -1,0 +1,119 @@
+{
+  "albumId": "MPREb_B3Inw3sN8Ga",
+  "header": {
+    "type": "MusicResponsiveHeader",
+    "title": "Lonely People With Power",
+    "subtitle": {
+      "runs": [
+        {
+          "text": "Album"
+        },
+        {
+          "text": " • "
+        },
+        {
+          "text": "2025"
+        }
+      ]
+    },
+    "strapline_text_one": {
+      "runs": [
+        {
+          "text": "Deafheaven",
+          "endpoint": {
+            "payload": {
+              "browseId": "UCpJAUou7A5TOpQEoYSVP_zQ"
+            }
+          }
+        }
+      ]
+    },
+    "thumbnail": {
+      "type": "MusicThumbnail",
+      "contents": [
+        {
+          "url": "https://yt3.googleusercontent.com/BiKxmrYUel30T4BXndOfkiSTDoF8KXljJ3OAb9rWQzp5K9DES2WDPPlDsQUhDbbKqBY_L9BWQmq4tX5fsg=w544-h544-l90-rj",
+          "width": 544,
+          "height": 544
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/BiKxmrYUel30T4BXndOfkiSTDoF8KXljJ3OAb9rWQzp5K9DES2WDPPlDsQUhDbbKqBY_L9BWQmq4tX5fsg=w226-h226-l90-rj",
+          "width": 226,
+          "height": 226
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/BiKxmrYUel30T4BXndOfkiSTDoF8KXljJ3OAb9rWQzp5K9DES2WDPPlDsQUhDbbKqBY_L9BWQmq4tX5fsg=w120-h120-l90-rj",
+          "width": 120,
+          "height": 120
+        },
+        {
+          "url": "https://yt3.googleusercontent.com/BiKxmrYUel30T4BXndOfkiSTDoF8KXljJ3OAb9rWQzp5K9DES2WDPPlDsQUhDbbKqBY_L9BWQmq4tX5fsg=w60-h60-l90-rj",
+          "width": 60,
+          "height": 60
+        }
+      ]
+    }
+  },
+  "contents": [
+    {
+      "id": "SCTh2x8Kz4Q",
+      "title": "Incidental I",
+      "index": "1"
+    },
+    {
+      "id": "Yt9l0mb4Nt0",
+      "title": "Doberman",
+      "index": "2"
+    },
+    {
+      "id": "2h_WVPSoMwU",
+      "title": "Magnolia",
+      "index": "3"
+    },
+    {
+      "id": "JKnbVdEogdg",
+      "title": "The Garden Route",
+      "index": "4"
+    },
+    {
+      "id": "CH3PmHeJpQ4",
+      "title": "Heathen",
+      "index": "5"
+    },
+    {
+      "id": "V7WALps_hXo",
+      "title": "Amethyst",
+      "index": "6"
+    },
+    {
+      "id": "XN7o7l5eehk",
+      "title": "Incidental II (feat. Jae Matthews)",
+      "index": "7"
+    },
+    {
+      "id": "1fVw2X6G_mk",
+      "title": "Revelator",
+      "index": "8"
+    },
+    {
+      "id": "Lq5kBkD-F1o",
+      "title": "Body Behavior",
+      "index": "9"
+    },
+    {
+      "id": "uNC9O-zREEU",
+      "title": "Incidental III (feat. Paul Banks)",
+      "index": "10"
+    },
+    {
+      "id": "4cjJ-b-W_7A",
+      "title": "Winona",
+      "index": "11"
+    },
+    {
+      "id": "TZXLo3YlR6s",
+      "title": "The Marvelous Orange Tree",
+      "index": "12"
+    }
+  ]
+}

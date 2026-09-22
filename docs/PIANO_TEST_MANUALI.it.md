@@ -151,6 +151,9 @@ Prima aggiornare l’estensione e creare **task nuovi**. Impostare `Download Mod
 | M12 | P1 | Ripetere lo stesso URL in Audio only, M4A e WebM. | Modalità normali ancora funzionanti; nessuna aggiunta dei nuovi tag se non si seleziona Musica. |
 | M13 | P1 | Usare `#gopeed:mode=music&audio=128`, poi aggiungere `&container=webm`. | Primo link: M4A con tag; secondo: errore esplicito, perché la combinazione non è supportata. |
 
+| M14 | P0 | Scaricare di nuovo la playlist `OLAK5uy_nuiuG2WyfAcLsgpacnRuV5P5o-yqQWyBU` in modalità Musica. | Tutte le 12 tracce riportano album `Lonely People With Power`, anno `2025`, numeri traccia 1–12 e la medesima copertina quadrata dell’album. La traccia 10 riporta `Incidental III (feat. Paul Banks)`. Verificare i tag incorporati anche offline. |
+| M15 | P1 | Ripetere Magnolia e Incidental III come URL singoli dopo il riavvio dell’app. | Album e copertina recuperati anche senza la cache della playlist; audio sempre corrispondente al video richiesto. |
+
 ### Verifiche per la pubblicazione
 
 - [ ] Tutti i **P0** applicabili superati **su Gopeed reale**, inclusi file finali singoli video+audio, audio M4A/WebM, una scelta dalla lista e i **due** brani dell'album; nessun P0 irrisolto.

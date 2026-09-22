@@ -47,6 +47,27 @@ func main() {
 	}
 	fmt.Println("Production bundle compiles and registers all three handlers in Goja.")
 	checkMusicTags(filepath.Join(filepath.Dir(path), ".."))
+	checkMusicAlbum(filepath.Join(filepath.Dir(path), ".."))
+}
+
+func checkMusicAlbum(root string) {
+	runtime := goja.New()
+	source, err := os.ReadFile(filepath.Join(root, "src/lib/music.js"))
+	must(err)
+	// The matcher uses no host APIs; network responses are supplied by the test.
+	_, err = runtime.RunString(strings.ReplaceAll(strings.SplitN(string(source), "\n", 2)[1], "export ", ""))
+	must(err)
+	test, err := os.ReadFile(filepath.Join(root, "test/goja/music-album.js"))
+	must(err)
+	_, err = runtime.RunString(string(test))
+	must(err)
+	if failure := runtime.Get("albumTestFailure").String(); failure != "" {
+		panic(failure)
+	}
+	if !runtime.Get("albumTestFinished").ToBoolean() {
+		panic("Album matching stalled with an unresolved promise")
+	}
+	fmt.Println("Album lookup executes in Goja: exact IDs, Unicode matching, artwork selection and cache verified.")
 }
 
 func checkMusicTags(root string) {

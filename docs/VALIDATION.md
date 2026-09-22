@@ -1,5 +1,17 @@
 # Validation — 2026-09-22
 
+## Version 2.2.2 — verified album lookup and artwork
+
+- Reproduced the missing-album case using live YouTube Music responses for `SCTh2x8Kz4Q`: the official-video queue entry has an artist and video thumbnail, but no album link. Song search returns another video ID; browsing its album `MPREb_B3Inw3sN8Ga` lists the original official-video IDs. Search now discovers candidates, and the original ID must occur in the album before its fields are accepted. No fuzzy title-only assignment is used.
+- The matcher handles queue primary/counterpart wrappers, checks up to three candidate albums, rejects ambiguous editions, and keeps compact successful album data (16 entries) and artwork (4 entries, at most 8 MiB) in memory for ten minutes. Failures and aborted lookups are not cached. Metadata retrieval uses the Music `/next` request without an unnecessary player request.
+- Live image fetches here took about eight seconds; the previous eight-second overall artwork deadline could omit a valid cover. Artwork now has a 20-second total deadline and a ten-second per-image deadline, with smaller album image variants available as fallbacks. Cancellation remains propagated and all timers/listeners are cleaned up.
+- The revised resolver was run with a real YouTube.js 18 client and live network requests for all 12 video IDs from the user's playlist `OLAK5uy_nuiuG2WyfAcLsgpacnRuV5P5o-yqQWyBU`. All returned `Lonely People With Power`, year `2025`, track numbers 1–12, album artist `Deafheaven`, and the same 544×544 JPEG album cover. Track 10 returned `Incidental III (feat. Paul Banks)`.
+- These live tags were applied with the actual M4A writer to temporary copies of the user's 12 uploaded downloads. `ffprobe` read the expected album/year/track/artwork in every output. SHA-256 hashes of the copied AAC packets matched every original. This validates metadata retrieval and tagging on real downloaded media; it is not a new SABR download in the Android app.
+- Cold-cache live lookups for Magnolia and Incidental III also returned the correct album and 544×544 artwork independently of the playlist cache.
+- Validation passed: **69 Node tests**, **4 native media tests**, lint, production build and Goja bundle/matcher/writer checks. Webpack reports only its existing bundle-size advisories.
+- A reduced fixture from the live album response is retained as `test/fixtures/deafheaven-album.json`; it contains only public album/track fields and image URLs, without menus, tracking data or credentials.
+- Added regressions for all 12 original IDs, feature-name aliases, rejection of unrelated IDs, ambiguous albums, wrappers, cache reuse/expiry/eviction, cancellation and stalled artwork requests. Goja executes the album matcher and cache logic as well as the M4A writer. Run M14–M15 in the manual plan on Android after updating.
+
 ## Version 2.2.1 — tag download runtime fix
 
 - Reproduced a tag-only failure in the Goja revision pinned by Gopeed: `Uint8Array.from('data', ...)` throws `TypeError: Value is not an object: data` while constructing the first metadata atom. Node accepts this call, which is why the original Node media tests missed the failure. The previous Goja check only initialized the bundle and did not execute the tag writer.

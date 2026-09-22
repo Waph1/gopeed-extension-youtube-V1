@@ -28,6 +28,6 @@ jobs:
         with:
           go-version: '1.25.4'
           cache-dependency-path: test/goja/go.sum
-      - name: Load production bundle and execute M4A writer in Goja
+      - name: Load production bundle and execute metadata/tagging checks in Goja
         working-directory: test/goja
         run: go run .

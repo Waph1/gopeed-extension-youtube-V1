@@ -4,7 +4,7 @@
   "title": "YouTube Video & Audio",
   "description": "YouTube videos, audio and playlists with automatic merging. Requires Gopeed 2.0.0-beta.3 or later.",
   "icon": "icon.png",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "homepage": "https://github.com/Waph1/gopeed-extension-youtube-V1",
   "repository": {
     "url": "https://github.com/Waph1/gopeed-extension-youtube-V1"
