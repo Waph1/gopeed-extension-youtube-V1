@@ -34,7 +34,11 @@ function writeOffset(data, offset, width, value) {
 }
 function box(type, ...payload) {
   const content = join(payload);
-  return join([uint32(content.length + 8), Uint8Array.from(type, (char) => char.charCodeAt(0)), content]);
+  // Goja rejects primitive strings in Uint8Array.from. MP4 atom names use
+  // single-byte character codes (including the copyright sign), not UTF-8.
+  const name = new Uint8Array(4);
+  for (let i = 0; i < name.length; i++) name[i] = type.charCodeAt(i);
+  return join([uint32(content.length + 8), name, content]);
 }
 function boxHeader(bytes) {
   const data = view(bytes);

@@ -1,4 +1,13 @@
-# Validation — 2026-09-21
+# Validation — 2026-09-22
+
+## Version 2.2.1 — tag download runtime fix
+
+- Reproduced a tag-only failure in the Goja revision pinned by Gopeed: `Uint8Array.from('data', ...)` throws `TypeError: Value is not an object: data` while constructing the first metadata atom. Node accepts this call, which is why the original Node media tests missed the failure. The previous Goja check only initialized the bundle and did not execute the tag writer.
+- MP4 atom names are now written directly as four single-byte character codes. This preserves the `0xA9` prefix of iTunes tag names; UTF-8 remains the encoding for the tag values.
+- Added an executable Goja regression check to `go run .` in `test/goja`: it runs the real M4A writer with a deterministic pull adapter and split input chunks, checks completion, Unicode metadata, one-byte atom names, relocated sample offsets and unchanged media bytes. This adapter tests the writer's binary operations, not live HTTP, WebView or the Android app.
+- The same fix was also exercised locally with Gopeed's actual stream JavaScript and its AAC fixture: the original writer failed and the corrected writer completed.
+- Local validation passed: 60 Node tests, all four native AAC integrity/tagging tests, lint, production build and the expanded Goja checks. Webpack reports only the existing bundle-size advisories.
+- A full live tagged download on Android still needs the user's device test. This patch addresses a reproduced runtime failure; it does not claim that all live metadata/network cases have been verified.
 
 ## Version 2.2.0 — music metadata
 
