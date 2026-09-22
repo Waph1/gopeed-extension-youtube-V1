@@ -24,6 +24,8 @@ function setup({
   settings = {},
   formats = [],
   title = 'Video: title',
+  musicResolver = async () => ({ title: 'Tagged song' }),
+  musicTagger = (stream) => stream,
 } = {}) {
   const events = {},
     openers = new Map(),
@@ -127,6 +129,14 @@ function setup({
     gopeed,
     readSettings: (url) => readSettings(url, gopeed.settings),
     planChoices,
+    resolveMusicMetadata: async (...args) => {
+      calls.musicLookups = (calls.musicLookups || 0) + 1;
+      return await musicResolver(...args);
+    },
+    tagM4aStream: (stream, metadata) => {
+      calls.taggedTitle = metadata.title;
+      return musicTagger(stream, metadata);
+    },
     syncWebViewCookies: async () => {},
     extractPlaylistId: () => (playlist ? 'PLtest' : null),
     resolvePlaylist: async () => playlist,
@@ -199,6 +209,63 @@ const makeTask = (req) => ({
 const start = async (env, res) => {
   await env.events.onStart({ task: makeTask(res.files[0].req) });
 };
+
+test('music downloads tag only the audio stream, without FFmpeg, and rebuild on restart', async () => {
+  const env = setup({ missingFFmpeg: true, settings: { downloadMode: 'music', audioContainer: 'webm' } });
+  const res = await resolve(env);
+  assert.match(res.files[0].name, /music-tags-highest\.m4a$/);
+  assert.equal(res.files[0].req.labels.mode, 'audio');
+  assert.equal(res.files[0].req.labels.musicMetadata, '1');
+  await start(env, res);
+  const blob = env.openers.get(res.files[0].req.url);
+  assert.equal(blob.options.contentType, 'audio/mp4');
+  for (let attempt = 0; attempt < 2; attempt++) await new Response(await blob.open()).arrayBuffer();
+  assert.equal(env.calls.musicLookups, 2);
+  assert.equal(env.calls.audioOpens, 2);
+  assert.equal(env.calls.taggedTitle, 'Tagged song');
+  assert.equal(env.calls.videoOpens, undefined);
+  assert.equal(env.calls.opens, 0);
+  assert.equal(env.calls.aborts, 2);
+});
+
+test('cancelling music metadata prevents starting an audio producer', async () => {
+  let started;
+  const lookupStarted = new Promise((resolve) => {
+    started = resolve;
+  });
+  const env = setup({
+    settings: { downloadMode: 'music' },
+    musicResolver: async (_input, _info, signal) => {
+      started();
+      await new Promise((resolve) => signal.addEventListener('abort', resolve, { once: true }));
+      throw Error('cancelled');
+    },
+  });
+  const res = await resolve(env);
+  await start(env, res);
+  const reader = (await env.openers.get(res.files[0].req.url).open()).getReader();
+  const pending = reader.read();
+  await lookupStarted;
+  await reader.cancel();
+  await pending;
+  assert.equal(env.calls.audioOpens, undefined);
+});
+
+test('tagging errors fail the music task and abort its producer', async () => {
+  const env = setup({
+    settings: { downloadMode: 'music' },
+    musicTagger: () => {
+      throw Error('Unsupported M4A');
+    },
+  });
+  const res = await resolve(env);
+  await start(env, res);
+  await assert.rejects(
+    new Response(await env.openers.get(res.files[0].req.url).open()).arrayBuffer(),
+    /Unsupported M4A/
+  );
+  assert.equal(env.calls.aborts, 1);
+});
 
 test('one unnamed MP4 resource consumes one SABR stream pair and releases it', async () => {
   const env = setup(),
@@ -486,11 +553,13 @@ test('choice dialog exposes merged resolutions and audio-only options without st
     ],
   });
   const res = await resolve(env);
-  assert.equal(res.files.length, 3);
+  assert.equal(res.files.length, 4);
   assert.equal(res.files[0].req.labels.audioQuality, '96');
   assert.equal(res.files[0].req.labels.mode, 'muxed');
   assert.equal(res.files[1].req.labels.mode, 'audio');
   assert.equal(res.files[2].req.labels.audioContainer, 'webm');
+  assert.equal(res.files[3].req.labels.musicMetadata, '1');
+  assert.match(res.files[3].name, /music-tags-128kbps-itag140\.m4a$/);
   assert.equal(env.calls.sessions, 0);
 });
 

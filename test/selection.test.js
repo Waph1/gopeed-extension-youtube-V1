@@ -62,13 +62,29 @@ test('legacy medium setting migrates and per-download fragment overrides default
 test('choice planning returns available resolutions and audio formats, or explicit playlist caps', () => {
   const settings = readSettings('', { askQuality: true });
   const choices = planChoices(settings, [video(1080), video(1080, 'av01'), video(360), audio(140, 128)]);
-  assert.equal(choices.length, 3);
+  assert.equal(choices.length, 4);
   assert.deepEqual(
     choices.slice(0, 2).map((c) => c.videoQuality),
     ['1080p', '360p']
   );
   assert.equal(choices[2].audioItag, '140');
+  assert.equal(choices[3].audioItag, '140');
+  assert.equal(choices[3].musicMetadata, true);
   assert.ok(planChoices(settings).some((c) => c.mode === 'audio'));
+});
+
+test('music choices always use AAC/M4A and retain the requested bitrate', () => {
+  const settings = readSettings('', { downloadMode: 'music', audioContainer: 'webm', audioQuality: '128' });
+  const [choice] = planChoices(settings);
+  assert.equal(choice.mode, 'audio');
+  assert.equal(choice.audioContainer, 'm4a');
+  assert.equal(choice.audioQuality, '128');
+  assert.equal(choice.musicMetadata, true);
+  assert.throws(() => readSettings('https://youtu.be/aaaaaaaaaaa#gopeed:mode=music&container=webm', {}), /M4A/);
+  const choices = planChoices(readSettings('', { askQuality: true }), [audio(251, 160, 'audio/webm')]);
+  assert.equal(choices.length, 1);
+  assert.equal(choices[0].audioContainer, 'webm');
+  assert.ok(!choices[0].musicMetadata);
 });
 
 test('valid single video URL forms and misleading external URLs', () => {

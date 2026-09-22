@@ -16,6 +16,11 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - name: Install native media validation tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+      - run: npm run test:media
       - run: npm run build
       - name: Ensure the installable bundle is current
         run: git diff --exit-code -- dist

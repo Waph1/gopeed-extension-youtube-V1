@@ -66,10 +66,11 @@ export function audioChoices(formats) {
 
 export function planChoices(settings, formats = null) {
   const base = {
-    mode: settings.downloadMode,
+    mode: settings.downloadMode === 'music' ? 'audio' : settings.downloadMode,
     videoQuality: settings.videoQuality,
     audioQuality: settings.audioQuality,
-    audioContainer: settings.audioContainer,
+    audioContainer: settings.downloadMode === 'music' ? 'm4a' : settings.audioContainer,
+    musicMetadata: settings.downloadMode === 'music',
   };
   if (!settings.askQuality) {
     return base.mode === 'separate'
@@ -92,11 +93,35 @@ export function planChoices(settings, formats = null) {
         .sort((a, b) => b - a)
         .map((n) => `${n}p`)
     : [...new Set([settings.videoQuality, '1080p', '720p', '480p'])];
-  const videos = qualities.map((videoQuality) => ({ ...base, mode: 'muxed', audioContainer: 'm4a', videoQuality }));
+  const videos = qualities.map((videoQuality) => ({
+    ...base,
+    mode: 'muxed',
+    musicMetadata: false,
+    audioContainer: 'm4a',
+    videoQuality,
+  }));
   const audio = formats
     ? audioChoices(formats)
-    : ['highest', '128', 'lowest'].map((audioQuality) => ({ ...base, mode: 'audio', audioQuality }));
-  const choices = videos.concat(audio);
+    : ['highest', '128', 'lowest'].map((audioQuality) => ({
+        ...base,
+        mode: 'audio',
+        musicMetadata: false,
+        audioQuality,
+      }));
+  // Tagging is offered explicitly: a Music category or URL alone does not
+  // identify a single song (concerts, podcasts and compilations exist there).
+  const music = formats
+    ? audio.filter((choice) => choice.audioContainer === 'm4a')
+    : ['highest', '128', 'lowest'].map((audioQuality) => ({
+        ...base,
+        mode: 'audio',
+        audioContainer: 'm4a',
+        audioQuality,
+      }));
+  const choices = videos.concat(
+    audio,
+    music.map((choice) => ({ ...choice, musicMetadata: true }))
+  );
   if (!choices.length) throw new Error('No downloadable audio or video formats were returned by YouTube.');
   return choices;
 }
