@@ -1,11 +1,15 @@
 // Compile and load the production bundle with Gopeed beta.3's JavaScript engine.
-// Network, browser and media operations are deliberately not simulated here.
+// Also execute the M4A writer against Goja's real typed-array implementation.
+// Network and browser operations are deliberately not simulated here.
 package main
 
 import (
 	"fmt"
-	"github.com/dop251/goja"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/dop251/goja"
 )
 
 func main() {
@@ -42,7 +46,34 @@ func main() {
 		panic("missing event handlers")
 	}
 	fmt.Println("Production bundle compiles and registers all three handlers in Goja.")
+	checkMusicTags(filepath.Join(filepath.Dir(path), ".."))
 }
+
+func checkMusicTags(root string) {
+	runtime := goja.New()
+	run := func(source string) {
+		_, err := runtime.RunString(source)
+		must(err)
+	}
+	read := func(path string) string {
+		source, err := os.ReadFile(filepath.Join(root, path))
+		must(err)
+		return string(source)
+	}
+	// Use the same UTF-8 implementation bundled by the webpack Gopeed plugin.
+	run("var exports = {};")
+	run(read("node_modules/text-encoding-utf-8/lib/encoding.lib.js"))
+	run(strings.ReplaceAll(read("src/lib/m4a-tags.js"), "export function", "function"))
+	run(read("test/goja/music-tags.js"))
+	if failure := runtime.Get("tagTestFailure").String(); failure != "" {
+		panic(failure)
+	}
+	if !runtime.Get("tagTestFinished").ToBoolean() {
+		panic("M4A tagging stalled with an unresolved promise")
+	}
+	fmt.Println("M4A writer executes in Goja: Unicode tags, one-byte atom names, offsets and media bytes verified.")
+}
+
 func must(err error) {
 	if err != nil {
 		panic(err)
